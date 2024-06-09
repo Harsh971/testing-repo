@@ -8,5 +8,3 @@ echo $path
 du -ah $path | sort -hr | head -n 5 
 
 echo "This is the list of big files in the file system $path "
-
-
