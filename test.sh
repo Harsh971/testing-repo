@@ -1,10 +1,38 @@
-#!/bin/bash
+pipeline {
+    agent any
 
-echo "First 5 biggest file in the file system passed via positional argument"
+    stages {
+        stage('Code Clone') {
+            steps {
+                echo 'Coding Phase'
+				git url:"https://github.com/LondheShubham153/django-notes-app.git", branch: "main"
+            }
+        }
+        
+        stage('Build') {
+            steps {
+                echo 'Build Phase'
+                sh "docker build -t notes-app ."
+            }
+        }
 
-path="$1"
-echo $path
-
-du -ah $path | sort -hr | head -n 5 
-
-echo "This is the list of big files in the file system $path "
+        
+        stage('Push to Docker Hub') {
+            steps {
+                echo 'Pushing Phase'
+				withCredentials([usernamePassword(credentialsId:"DockerHub",passwordVariable:"DockerHubPass",usernameVariable:"DockerHubUser")]){
+				sh "docker tag notes-app ${env.DockerHubUser}/notes-app:latest"
+				sh "docker login -u ${env.DockerHubUser} -p ${env.DockerHubPass}"
+				sh "docker push ${env.DockerHubUser}/notes-app:latest"
+				}
+            }
+        }
+                
+        stage('Deploy') {
+            steps {
+                echo 'Deploy Phase'
+                sh "docker-compose down && docker-compose up -d"
+            }
+        }
+    }
+}
